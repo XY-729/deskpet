@@ -2,13 +2,13 @@
 #include "./ui_widget.h"
 SettingWidget *SettingWidget::settingWidget_Instance=nullptr;
 int Widget::widget_size=150;
-void Widget::updateFrame()
-{
-    gifLabel->setPixmap(frames[frameIndex]);
-    frameIndex++;
-    if(frameIndex==15)
-        frameIndex=0;
-}
+// void Widget::updateFrame()
+// {
+//     gifLabel->setPixmap(frames[frameIndex]);
+//     frameIndex++;
+//     if(frameIndex==15)
+//         frameIndex=0;
+// }
 void RandomMoving::updatePosition(){
     int newX = target->pos().x();
     int newY = target->pos().y();
@@ -32,7 +32,7 @@ void RandomMoving::updatePosition(){
 RandomMoving::RandomMoving(QWidget* target):target(target),QObject(){
     QScreen *screen = QApplication::primaryScreen();
     screenRect = screen->availableGeometry();
-    speed=10;
+    speed=5;
     changetimer=new QTimer(this);
     moveTimer=new QTimer(this);
     isMovingRight = QRandomGenerator::global()->generate() % 2 == 0;
@@ -50,17 +50,15 @@ void Widget::catRide()
     mover=new RandomMoving(this);
     resize(Widget::widget_size,Widget::widget_size);
 }
-void Widget::catMove()
+void Widget::catWalk()
 {
-    resize(500*Widget::widget_size/150,97*Widget::widget_size/150);
-    frameIndex=6;
     gifLabel->clear();
-    walkTimer->start(100);
+    gifLabel->setMovie(walkMovie);
+    walkMovie->start();
+    resize(Widget::widget_size,Widget::widget_size);
 }
 void Widget::catSmoke()
 {
-
-    walkTimer->stop();
     gifLabel->clear();
     gifLabel->setMovie(smokeMovie);
     smokeMovie->setSpeed(90);
@@ -69,6 +67,8 @@ void Widget::catSmoke()
 }
 void Widget::catIdle()
 {
+    if(mover)
+        mover->stop_move();
     gifLabel->clear();
     gifLabel->setMovie(idleMovie);
     idleMovie->start();
@@ -77,46 +77,62 @@ void Widget::showMenu(const QPoint& pos)
 {
     menu->clear();
     menu->addAction("关闭宠物", this, &Widget::close);
-    if(idleMovie->state()==QMovie::Running)
+    if(idleMovie->state()==QMovie::Running||rideMovie->state()==QMovie::Running)
     {
         menu->addAction("暂停",this,[=](){
         idleMovie->setPaused(true);
+        rideMovie->setPaused(true);
+        if(mover!=nullptr)
+            mover->stop_move();
         isPausing=true;
+        rideTimer->stop();
+        Move_Timer->stop();
         });}
-    else if(idleMovie->state()==QMovie::Paused)
+    else if(idleMovie->state()==QMovie::Paused||rideMovie->state()==QMovie::Running)
     {
         menu->addAction("继续",this,[=](){
         idleMovie->setPaused(false);
+        rideMovie->setPaused(false);
+        if(mover!=nullptr)
+            mover->continue_move();
         isPausing=false;
+        if(gifLabel->movie()==idleMovie)
+            rideTimer->start(8000);
+        else if(gifLabel->movie()==rideMovie)
+            Move_Timer->start(6000);
         });}
     menu->addAction("设置",this,[=](){
         SettingWidget::getSettingWidget(this);});
     menu->move(QCursor::pos());
     menu->show();
 }
-void Widget::loadPicture(QPixmap* oriPicture,
-QList<QPixmap> &frames,int r,int c,int width,int height,int num)
-{
-    int cnt=0;
-    frames.clear();
-    for(int i=0;i<r;i++)
-    {
-        for(int j=0;j<c;j++)
-        {
-            if(cnt==num)
-                return;
-            int x=j*width;int y=i*height;
-            QPixmap frame = oriPicture->copy(x+50, y, width, height);
-            //frame.save(QString("%1.png").arg(cnt));
-            frames.append(frame);
-            cnt++;
-        }
-    }
-}
+// void Widget::loadPicture(QPixmap* oriPicture,
+// QList<QPixmap> &frames,int r,int c,int width,int height,int num)
+// {
+//     int cnt=0;
+//     frames.clear();
+//     for(int i=0;i<r;i++)
+//     {
+//         for(int j=0;j<c;j++)
+//         {
+//             if(cnt==num)
+//                 return;
+//             int x=j*width;int y=i*height;
+//             QPixmap frame = oriPicture->copy(x+50, y, width, height);
+//             //frame.save(QString("%1.png").arg(cnt));
+//             frames.append(frame);
+//             cnt++;
+//         }
+//     }
+// }
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
 {
+    idlefile=":/image/catIdle.gif";
+    smokefile=":/image/smoke.gif";
+    ridefile=":/image/catRide.gif";
+    walkfile=":/image/catwalk.gif";
     resize(150,150);//初始尺寸
     // move(1000,500);
     QVBoxLayout *layout = new QVBoxLayout(this);
@@ -125,27 +141,29 @@ Widget::Widget(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground, true);//设置窗口背景透明
     gifLabel = new MyGifLabel(this);
     idleMovie = new QMovie(this);
-    idleMovie->setFileName(":/image/catIdle.gif");
+    idleMovie->setFileName(idlefile);
     smokeMovie = new QMovie(this);
-    smokeMovie->setFileName(":/image/smoke.gif");
+    smokeMovie->setFileName(smokefile);
     rideMovie=new QMovie(this);
-    rideMovie->setFileName(":/image/catRide.gif");
+    rideMovie->setFileName(ridefile);
+    walkMovie=new QMovie(this);
+    walkMovie->setFileName(walkfile);
     menu=new QMenu(gifLabel);
-    oriPicture=new QPixmap(":/image/catMove.png");
-    oriPicture->scaled(400, 300, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    Widget::loadPicture(oriPicture,frames,8,14,400,97,15);//加载精灵图
+    // oriPicture=new QPixmap(":/image/catMove.png");
+    // oriPicture->scaled(400, 300, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    // Widget::loadPicture(oriPicture,frames,8,14,400,97,15);//加载精灵图
     layout->addWidget(gifLabel);
     layout->setContentsMargins(0, 0, 0, 0);
 
     Move_Timer=new QTimer(this);
-    walkTimer=new QTimer(this);
     smokeTimer=new QTimer(this);
-    dragTimer=new QTimer(this);
-    rideTimer=new QTimer(this);
 
+    dragTimer=new QTimer(this);//区别单击和拖拽
     connect(dragTimer,&QTimer::timeout,this,[=](){isDragging=true;});
+
     Widget::catIdle();//初始待机
-    rideTimer->start(2000);
+    rideTimer=new QTimer(this);//静置触发
+    rideTimer->start(8000);//静置阈值
     connect(rideTimer,&QTimer::timeout,this,[=](){
         isMoving=true;
         Widget::catRide();
@@ -156,11 +174,11 @@ Widget::Widget(QWidget *parent)
         smokeMovie->stop();
         smokeTimer->stop();
         if(isMoving==false)
-        {Widget::catMove();isMoving=true;Move_Timer->start(1900);rideTimer->stop();}
+        {Widget::catWalk();isMoving=true;Move_Timer->start(1900);rideTimer->stop();}
         else
-        {Widget::catIdle();isMoving=false;Move_Timer->stop();rideTimer->start(2000);};
+        {Widget::catIdle();isMoving=false;Move_Timer->stop();rideTimer->start(8000);};
     });
-    connect(walkTimer,&QTimer::timeout,this,&Widget::updateFrame);
+    // connect(walkTimer,&QTimer::timeout,this,&Widget::updateFrame);
     connect(Move_Timer,&QTimer::timeout,this,[=](){
         if(mover!=nullptr)
         {delete mover;mover=nullptr;}
@@ -176,7 +194,6 @@ Widget::Widget(QWidget *parent)
 Widget::~Widget()
 {
     delete ui;
-    delete oriPicture;
 }
 
 //鼠标拖动实现
@@ -264,16 +281,69 @@ void SettingWidget::on_sizeSlider_valueChanged(int value)
 }
 void SettingWidget::on_fileButton1_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(
+    filePath = QFileDialog::getOpenFileName(
         this,
         "选择皮肤文件",
-        "....",
+        "",
         "文件(*.qss *.png *.jpg *.gif)"
         );
-
-    // 2. 如果用户选择了文件（不是点击取消），就把路径填充到 LineEdit
     if (!filePath.isEmpty()) {
         ui->filetext1->setText(filePath);
+    }
+}
+void SettingWidget::on_commitButton1_clicked()
+{
+    if (!filePath.isEmpty()) {
+        target->idlefile=filePath;
+        target->idleMovie->setFileName(target->idlefile);
+        target->catIdle();
+    }
+}
+
+
+void SettingWidget::on_fileButton2_clicked()
+{
+    filePath = QFileDialog::getOpenFileName(
+        this,
+        "选择皮肤文件",
+        "",
+        "文件(*.qss *.png *.jpg *.gif)"
+        );
+    if (!filePath.isEmpty()) {
+        ui->filetext2->setText(filePath);
+    }
+}
+
+void SettingWidget::on_commitButton2_clicked()
+{
+    if (!filePath.isEmpty()) {
+        target->walkfile=filePath;
+        target->walkMovie->setFileName(target->walkfile);
+        target->catIdle();
+    }
+}
+
+
+void SettingWidget::on_fileButton3_clicked()
+{
+    filePath = QFileDialog::getOpenFileName(
+        this,
+        "选择皮肤文件",
+        "",
+        "文件(*.qss *.png *.jpg *.gif)"
+        );
+    if (!filePath.isEmpty()) {
+        ui->filetext3->setText(filePath);
+    }
+}
+
+
+void SettingWidget::on_commitButton3_clicked()
+{
+    if (!filePath.isEmpty()) {
+        target->ridefile=filePath;
+        target->rideMovie->setFileName(target->ridefile);
+        target->catIdle();
     }
 }
 

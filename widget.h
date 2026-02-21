@@ -36,10 +36,21 @@ private slots:
 
     void on_fileButton1_clicked();
 
+    void on_commitButton1_clicked();
+
+    void on_fileButton2_clicked();
+
+    void on_commitButton2_clicked();
+
+    void on_fileButton3_clicked();
+
+    void on_commitButton3_clicked();
+
 private:
     SettingWidget(Widget *target);
     static SettingWidget *settingWidget_Instance;
     Widget *target;
+    QString filePath;
     Ui::Widget *ui;
 };
 class MyGifLabel:public QLabel
@@ -69,6 +80,14 @@ class RandomMoving:public QObject
 public:
     RandomMoving(QWidget* target);
     ~RandomMoving(){}
+    void stop_move(){
+        moveTimer->stop();
+        changetimer->stop();
+    }
+    void continue_move(){
+        moveTimer->start(20);
+        changetimer->start(1000);
+    }
 private:
     int speed=50;
     QWidget* target;
@@ -81,29 +100,29 @@ private:
 class Widget : public QWidget
 {
     Q_OBJECT//一个宏，允许使用信号和槽
-
+    friend class SettingWidget;
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 public slots:
     void showMenu(const QPoint& pos );
 protected:
-    void catMove();
+    void catWalk();
     void catIdle();
     void catSmoke();
     void catRide();
-    void loadPicture(QPixmap* spriteSheet,QList<QPixmap> &frames,int r,int c,int width,int height,int num);
+    // void loadPicture(QPixmap* spriteSheet,QList<QPixmap> &frames,int r,int c,int width,int height,int num);
 private:
     Ui::Widget *ui;
     QTimer *Move_Timer;
-    QTimer *walkTimer;
+    // QTimer *walkTimer;
     QTimer *smokeTimer;
     QTimer *rideTimer;
-    QPixmap *oriPicture;
-    QList<QPixmap> frames;
-    int frameIndex=0;
-    void updateFrame();
-    RandomMoving *mover;
+    // QPixmap *oriPicture;
+    // QList<QPixmap> frames;
+    // int frameIndex=0;
+    // void updateFrame();
+    RandomMoving *mover=nullptr;
 
     QMenu *menu;
     QTimer *dragTimer;
@@ -112,9 +131,10 @@ private:
     bool isPausing = false;
     QPoint startPos;
     MyGifLabel *gifLabel;
-    QMovie *idleMovie;
-    QMovie *smokeMovie;
-    QMovie *rideMovie;
+    QMovie *idleMovie;   QString idlefile;
+    QMovie *smokeMovie; QString smokefile;
+    QMovie *rideMovie; QString ridefile;
+     QMovie *walkMovie; QString walkfile;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event)override;
     void mouseReleaseEvent(QMouseEvent *event)override;

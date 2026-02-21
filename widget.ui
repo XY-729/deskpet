@@ -169,6 +169,13 @@
        <item>
         <widget class="QLineEdit" name="filetext1"/>
        </item>
+       <item>
+        <widget class="QPushButton" name="commitButton1">
+         <property name="text">
+          <string>确定</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -198,6 +205,13 @@
        <item>
         <widget class="QLineEdit" name="filetext2"/>
        </item>
+       <item>
+        <widget class="QPushButton" name="commitButton2">
+         <property name="text">
+          <string>确定</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -226,6 +240,13 @@
        </item>
        <item>
         <widget class="QLineEdit" name="filetext3"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="commitButton3">
+         <property name="text">
+          <string>确定</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

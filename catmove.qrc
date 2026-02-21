@@ -2,7 +2,8 @@
     <qresource prefix="/image">
         <file>catIdle.gif</file>
         <file>catRide.gif</file>
-        <file>catMove.png</file>
         <file>smoke.gif</file>
+        <file>catrun.gif</file>
+        <file>catIdle2.gif</file>
     </qresource>
 </RCC>
