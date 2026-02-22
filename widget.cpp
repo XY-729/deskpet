@@ -1,7 +1,7 @@
 #include "widget.h"
 #include "./ui_widget.h"
+int Widget::widget_size = 0;
 SettingWidget *SettingWidget::settingWidget_Instance=nullptr;
-int Widget::widget_size=150;
 // void Widget::updateFrame()
 // {
 //     gifLabel->setPixmap(frames[frameIndex]);
@@ -72,6 +72,7 @@ void Widget::catIdle()
     gifLabel->clear();
     gifLabel->setMovie(idleMovie);
     idleMovie->start();
+    resize(Widget::widget_size,Widget::widget_size);
 }
 void Widget::showMenu(const QPoint& pos)
 {
@@ -129,11 +130,12 @@ Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
 {
-    idlefile=":/image/catIdle.gif";
-    smokefile=":/image/smoke.gif";
-    ridefile=":/image/catRide.gif";
-    walkfile=":/image/catwalk.gif";
-    resize(150,150);//初始尺寸
+    m_settings=new QSettings;
+    Widget::widget_size=m_settings->value("config/widget_size" ,200).toInt();
+    idlefile = m_settings->value("file/idle", ":/image/catIdle.gif").toString();
+    smokefile = m_settings->value("file/smoke", ":/image/smoke.gif").toString();
+    ridefile = m_settings->value("file/ride", ":/image/catRide.gif").toString();
+    walkfile = m_settings->value("file/walk", ":/image/catwalk.gif").toString();
     // move(1000,500);
     QVBoxLayout *layout = new QVBoxLayout(this);
     this->setWindowFlags(Qt::WindowStaysOnTopHint);
@@ -278,6 +280,8 @@ void SettingWidget::on_sizeSlider_valueChanged(int value)
     int size = minSize + static_cast<int>((maxSize - minSize) * scale);
     Widget::widget_size=size;
     target->resize(size, size);
+    target->m_settings->setValue("config/widget_size", size);  // 保存int
+    target->m_settings->sync();  // 立即同步到磁盘
 }
 void SettingWidget::on_fileButton1_clicked()
 {
@@ -297,6 +301,8 @@ void SettingWidget::on_commitButton1_clicked()
         target->idlefile=filePath;
         target->idleMovie->setFileName(target->idlefile);
         target->catIdle();
+        target->m_settings->setValue("file/idle", filePath);  // 立即保存到配置
+        target->m_settings->sync();  // 强制同步到磁盘
     }
 }
 
@@ -320,6 +326,8 @@ void SettingWidget::on_commitButton2_clicked()
         target->walkfile=filePath;
         target->walkMovie->setFileName(target->walkfile);
         target->catIdle();
+        target->m_settings->setValue("file/walk", filePath);  // 立即保存到配置
+        target->m_settings->sync();  // 强制同步到磁盘
     }
 }
 
@@ -344,6 +352,8 @@ void SettingWidget::on_commitButton3_clicked()
         target->ridefile=filePath;
         target->rideMovie->setFileName(target->ridefile);
         target->catIdle();
+        target->m_settings->setValue("file/ride", filePath);  // 立即保存到配置
+        target->m_settings->sync();  // 强制同步到磁盘
     }
 }
 

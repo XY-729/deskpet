@@ -13,6 +13,7 @@
 #include <QRandomGenerator>
 #include <QScreen>
 #include <QFileDialog>
+#include <QSettings>
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class Widget;
@@ -141,6 +142,8 @@ private:
 
     SettingWidget* setting=nullptr;
     QVBoxLayout *layout;
+
+    QSettings * m_settings;
 public:
     static int widget_size;
 };
